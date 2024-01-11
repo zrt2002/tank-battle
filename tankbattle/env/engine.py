@@ -179,14 +179,17 @@ class TankBattle(object):
 
     def __generate_players(self):
 
-        self.player1 = TankSprite(self.tile_size, pos_x=int(self.num_of_tiles / 2) - 2, pos_y=self.num_of_tiles - 2,
-                                  sprite_bg=(self.rc_manager.get_image(ResourceManager.PLAYER1_LEFT),
-                                             self.rc_manager.get_image(ResourceManager.PLAYER1_RIGHT),
-                                             self.rc_manager.get_image(ResourceManager.PLAYER1_UP),
-                                             self.rc_manager.get_image(ResourceManager.PLAYER1_DOWN)),
-                                  is_enemy=False, bullet_loading_time=GlobalConstants.PLAYER_LOADING_TIME,
-                                  speed=self.player_speed,
-                                  auto_control=self.player1_human_control)
+        self.player1 = TankSprite(
+            self.tile_size, 
+            pos_x=int(self.num_of_tiles / 2) - 2, 
+            pos_y=self.num_of_tiles - 2,
+            sprite_bg=(self.rc_manager.get_image(ResourceManager.PLAYER1_LEFT),
+            self.rc_manager.get_image(ResourceManager.PLAYER1_RIGHT),
+            self.rc_manager.get_image(ResourceManager.PLAYER1_UP),
+            self.rc_manager.get_image(ResourceManager.PLAYER1_DOWN)),
+            is_enemy=False, bullet_loading_time=GlobalConstants.PLAYER_LOADING_TIME,
+            speed=self.player_speed,
+            auto_control=self.player1_human_control)
         self.sprites.add(self.player1)
         self.players.add(self.player1)
 
