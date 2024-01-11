@@ -311,15 +311,15 @@ class TankBattle(object):
                 if key == pygame.K_SPACE:
                     self.__fire_bullet(self.player2, False)
             else:
-                if key == pygame.K_LEFT:
+                if key == pygame.K_a:
                     self.player1.move(GlobalConstants.LEFT_ACTION, self.sprites)
-                if key == pygame.K_RIGHT:
+                if key == pygame.K_d:
                     self.player1.move(GlobalConstants.RIGHT_ACTION, self.sprites)
-                if key == pygame.K_UP:
+                if key == pygame.K_w:
                     self.player1.move(GlobalConstants.UP_ACTION, self.sprites)
-                if key == pygame.K_DOWN:
+                if key == pygame.K_s:
                     self.player1.move(GlobalConstants.DOWN_ACTION, self.sprites)
-                if key == pygame.K_SPACE:
+                if key == pygame.K_j:
                     self.__fire_bullet(self.player1, False)
         else:
             if not self.player1_human_control:
