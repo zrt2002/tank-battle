@@ -2,6 +2,9 @@ import pygame
 import os
 import numpy as np
 import sys
+import random
+
+
 import collections as cl
 from tankbattle.env.utils import Utils
 from tankbattle.env.constants import GlobalConstants
@@ -13,11 +16,10 @@ from tankbattle.env.sprites.bullet import BulletSprite
 from tankbattle.env.manager import ResourceManager
 from tankbattle.env.maps import StageMap
 
-
 class TankBattle(object):
 
     def __init__(self, render=False, speed=60, max_frames=100000, frame_skip=1,
-                 seed=None, num_of_enemies=5, two_players=True, player1_human_control=True,
+                 seed=None, num_of_enemies=1, two_players=True, player1_human_control=True,
                  player2_human_control=False, debug=False):
 
         # Prepare internal data
@@ -151,10 +153,10 @@ class TankBattle(object):
 
     def __generate_base_and_walls(self):
         # Create a base
-        self.base = BaseSprite(self.tile_size, pos_x=int(self.num_of_tiles / 2), pos_y=self.num_of_tiles - 2,
-                               sprite_bg=self.rc_manager.get_image(ResourceManager.BASE))
-        self.sprites.add(self.base)
-        self.bases.add(self.base)
+        # self.base = BaseSprite(self.tile_size, pos_x=int(self.num_of_tiles / 2), pos_y=self.num_of_tiles - 2,
+        #                        sprite_bg=self.rc_manager.get_image(ResourceManager.BASE))
+        # self.sprites.add(self.base)
+        # self.bases.add(self.base)
 
         # Create walls
         wall_bg = self.rc_manager.get_image(ResourceManager.HARD_WALL)
@@ -226,17 +228,21 @@ class TankBattle(object):
     def __enemies_update(self):
         if self.frames_count % self.enemy_update_freq == 0:
             for enemy in self.enemies:
-                rand_action = np.random.randint(0, self.num_of_actions)
-                if rand_action != GlobalConstants.FIRE_ACTION:
-                    rand_action = enemy.direction
-                    if not enemy.move(rand_action, self.sprites):
-                        rand_action = np.random.randint(0, self.num_of_actions)
-                        if rand_action != GlobalConstants.FIRE_ACTION:
-                            enemy.move(rand_action, self.sprites)
-                        else:
-                            enemy.fire_started_time = self.frames_count
-                else:
+                if random.random() < 0.25:
                     self.__fire_bullet(enemy, True)
+                else:
+                    rand_action = np.random.randint(0, self.num_of_actions)
+                    if rand_action != GlobalConstants.FIRE_ACTION:
+                        if random.random() < 0.5 :
+                            rand_action = enemy.direction
+                        if not enemy.move(rand_action, self.sprites):
+                            rand_action = np.random.randint(0, self.num_of_actions)
+                            if rand_action != GlobalConstants.FIRE_ACTION:
+                                enemy.move(rand_action, self.sprites)
+                            else:
+                                enemy.fire_started_time = self.frames_count
+                    else:
+                        self.__fire_bullet(enemy, True)
 
     def __draw_score(self):
         total_score = self.font.render('Score:' + str(self.total_score), False, Utils.get_color(Utils.WHITE))

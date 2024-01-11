@@ -39,7 +39,7 @@ class GlobalConstants:
     FONT_SIZE = 18
 
     PLAYER_LOADING_TIME = 20
-    ENEMY_LOADING_TIME  = 90
+    ENEMY_LOADING_TIME  = 20
 
     NUM_OF_TILES = 3
     WALL_TILE = 0
