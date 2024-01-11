@@ -1,6 +1,6 @@
-from scipy.misc import imresize
 import time
 import numpy as np
+import cv2
 
 
 class Utils():
@@ -24,5 +24,5 @@ class Utils():
     @staticmethod
     def process_state(state):
         grayscale = np.dot(state[:, :, :3], [0.299, 0.587, 0.114])
-        resize = imresize(grayscale, (84, 84), interp='bilinear')
-        return resize
+        resized = cv2.resize(grayscale, (84, 84), interpolation=cv2.INTER_LINEAR)
+        return resized
