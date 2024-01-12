@@ -15,7 +15,6 @@ from torch.utils.tensorboard import SummaryWriter
 import time
 import os
 from typing import Union
-import argparse
 
 now = time.strftime('%Y-%m-%d-%H-%M-%S',time.localtime(int(round(time.time()*1000))/1000))
 writer = SummaryWriter()
@@ -25,8 +24,7 @@ def train_DQN(agent: DQN,
               n_epochs,
               replay_buffer: ReplayBuffer,
               minimal_size,
-              batch_size,
-              kill_multiple):
+              batch_size):
     max_q_value_list = []
     max_q_value = 0
     for epoch in tqdm(range(n_epochs)):
@@ -41,7 +39,7 @@ def train_DQN(agent: DQN,
             naive_reward = game.step(action)[0]
             next_state = State(game)
             is_terminal = game.is_terminal()
-            reward = get_reward(state, action, next_state, naive_reward, is_terminal, kill_multiple)
+            reward = get_reward(state, action, next_state, naive_reward, is_terminal)
             replay_buffer.add(state.board, action, reward, next_state.board, is_terminal)
             state = next_state
             epoch_return += reward
@@ -128,8 +126,7 @@ def evaluate_DQN(agent: DQN,
 def machine_control(two_players=False,
                     ckpt: Union[str, None] = None,
                     train: bool = False,
-                    monkey: bool = False,
-                    kill_multiple: int = 100):
+                    monkey: bool = False):
     replay_buffer = ReplayBuffer(5000)
     game = TankBattle(render=True, 
                       player1_human_control=False,
@@ -160,7 +157,7 @@ def machine_control(two_players=False,
         target_update, device, 'DoubleDQN')
         agent.load(ckpt)
         if train:
-            train_DQN(agent, game, n_epochs, replay_buffer, minimal_size, batch_size, kill_multiple)
+            train_DQN(agent, game, n_epochs, replay_buffer, minimal_size, batch_size)
         else:
             evaluate_DQN(agent, game, n_epochs)
     else:
@@ -188,7 +185,7 @@ def human_control(two_players=False):
     game = TankBattle(render=True, player1_human_control=True, player2_human_control=True, two_players=two_players,
                       speed=60, debug=True, frame_skip=5)
 
-    # print("Press 'Space' to fire and arrow keys to control the tank !")
+    print("Press 'Space' to fire and arrow keys to control the tank !")
 
     game.reset()
     scores = []
@@ -200,30 +197,19 @@ def human_control(two_players=False):
         if terminal:
             # print("P1 Score:", game.total_score_p1)
             # if two_players:
-                # print("P2 Score:", game.total_score_p2)
+            #     print("P2 Score:", game.total_score_p2)
             # print("Total Score", game.total_score)
             # print("Current steps:", step)
             scores.append(game.total_score)
             game.reset()
 
-    # print(scores)
+    print(scores)
 
 
 if __name__ == '__main__':
-    #argparse
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--train', action='store_true', default=False)
-    parser.add_argument('--monkey', action='store_true', default=False)
-    parser.add_argument('--ckpt', type=str, default=None)
-    parser.add_argument('--kill_multiple', type=int, default=100)
-    args = parser.parse_args()
-    print(args)
     machine_control(
-        two_players=False,
-        ckpt=args.ckpt,
-        train=args.train,
-        monkey=args.monkey,
-        kill_multiple=args.kill_multiple
-        )
+        two_players=False, ckpt=r'C:\Users\rinto\Documents\GitHub\tank-battle\ckpts\2024-01-12-21-01-43\model_240.pth', 
+        train=True,
+        monkey=False)
     # human_control()

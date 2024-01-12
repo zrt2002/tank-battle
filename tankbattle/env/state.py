@@ -63,8 +63,8 @@ class State:
         return False
 
 
-def get_reward(state: State, action, next_state: State, naive_reward, is_terminal):
-    reward = naive_reward * 20
+def get_reward(state: State, action, next_state: State, naive_reward, is_terminal, kill_multiple=100):
+    reward = naive_reward * kill_multiple
     # reward -= 1.01 ** (state.enemy_age / 1000) / 100
     # if next_state.min_norm < state.min_norm:
         # reward += 0.1
