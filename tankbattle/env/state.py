@@ -12,17 +12,17 @@ class State:
         1. game.enemies, game.bullets_player and game.bullets_enemy are all pygame.sprite.Group. They can only be accessed by for-loop and can't be accessed by index.
         2. the 0th row and 0th column of the map are walls, so we subtract 1 from all coordinates so as to reduce redudant dimension.
         '''
-        self.current_board = np.zeros([11, 11, 4])
+        self.current_board = np.zeros([4, 11, 11])
         self.player_x = game.player1.pos_x - 1
         self.player_y = game.player1.pos_y - 1
         self.player_dir = game.player1.direction
-        self.current_board[self.player_x, self.player_y, 0] = self.player_dir
+        self.current_board[0, self.player_x, self.player_y] = self.player_dir
         enemy: TankSprite
         for enemy in game.enemies:
             self.enemy_x = enemy.pos_x - 1
             self.enemy_y = enemy.pos_y - 1 
             self.enemy_dir = enemy.direction
-            self.current_board[self.enemy_x, self.enemy_y, 1] = self.enemy_dir
+            self.current_board[1, self.enemy_x, self.enemy_y] = self.enemy_dir
 
         bullet: BulletSprite
         self.bullets_player: list = []
@@ -31,7 +31,7 @@ class State:
             self.bullet_x = bullet.pos_x - 1
             self.bullet_y = bullet.pos_y - 1
             self.bullet_dir = bullet.direction
-            self.current_board[self.bullet_x, self.bullet_y, 2] = self.bullet_dir
+            self.current_board[2, self.bullet_x, self.bullet_y] = self.bullet_dir
             self.bullets_player.append([self.bullet_x, self.bullet_y, self.bullet_dir])
         
         self.bullets_enemy: list = []
@@ -39,7 +39,7 @@ class State:
             self.bullet_x = bullet.pos_x - 1
             self.bullet_y = bullet.pos_y - 1
             self.bullet_dir = bullet.direction
-            self.current_board[self.bullet_x, self.bullet_y, 3] = self.bullet_dir
+            self.current_board[3, self.bullet_x, self.bullet_y] = self.bullet_dir
             self.bullets_enemy.append([self.bullet_x, self.bullet_y, self.bullet_dir])
 
         self.board = self.current_board
