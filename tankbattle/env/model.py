@@ -14,9 +14,10 @@ class Qnet(torch.nn.Module):
         self.pooling = torch.nn.AvgPool2d(kernel_size=2, stride=2)
         self.conv2 = torch.nn.Conv2d(8, 16, kernel_size=3)
         self.flatten = torch.nn.Flatten()
-        self.linear1 = torch.nn.Linear(64, 32)
-        self.linear2 = torch.nn.Linear(32, 10)
-        self.linear3 = torch.nn.Linear(10, 1)
+        self.linear1 = torch.nn.Linear(64, 48)
+        self.linear2 = torch.nn.Linear(48, 32)
+        self.linear3 = torch.nn.Linear(32, 16)
+        self.linear4 = torch.nn.Linear(16, 5)
         self.activation = torch.nn.Sigmoid()
         
     def forward(self, x):
@@ -27,7 +28,8 @@ class Qnet(torch.nn.Module):
         x = self.flatten(x)
         x = self.activation(self.linear1(x))
         x = self.activation(self.linear2(x))
-        return self.linear3(x)    
+        x = self.activation(self.linear3(x))
+        return self.linear4(x)    
 
     
 class VAnet(torch.nn.Module):
@@ -37,12 +39,13 @@ class VAnet(torch.nn.Module):
         self.pooling = torch.nn.AvgPool2d(kernel_size=2, stride=2)
         self.conv2 = torch.nn.Conv2d(8, 16, kernel_size=3)
         self.flatten = torch.nn.Flatten()
-        self.linear1 = torch.nn.Linear(64, 32)
-        self.linear2 = torch.nn.Linear(32, 10)
-        self.linear3 = torch.nn.Linear(10, 1)
+        self.linear1 = torch.nn.Linear(64, 48)
+        self.linear2 = torch.nn.Linear(48, 32)
+        self.linear3 = torch.nn.Linear(32, 16)
+        self.linear4 = torch.nn.Linear(16, 5)
         self.activation = torch.nn.Sigmoid()  # 共享网络部分
-        self.fc_A = torch.nn.Linear(10, 5)
-        self.fc_V = torch.nn.Linear(10, 1)
+        self.fc_A = torch.nn.Linear(16, 5)
+        self.fc_V = torch.nn.Linear(16, 1)
 
     def forward(self, x):
         x = self.activation(self.conv1(x))
@@ -52,6 +55,7 @@ class VAnet(torch.nn.Module):
         x = self.flatten(x)
         x = self.activation(self.linear1(x))
         x = self.activation(self.linear2(x))
+        x = self.activation(self.linear3(x))
         A = self.fc_A(x)
         V = self.fc_V(x)
         Q = V + A - A.mean(1).view(-1, 1)  # Q值由V值和A值计算得到
@@ -86,12 +90,12 @@ class DQN:
         if np.random.random() < self.epsilon:
             action = np.random.randint(self.action_dim)
         else:
-            state = torch.tensor([state], dtype=torch.float).to(self.device)
+            state = torch.tensor(state, dtype=torch.float).reshape(1, 4, 11, 11).to(self.device)
             action = self.q_net(state).argmax().item()
+        self.epsilon = (self.epsilon - 0.1) / (1 + 0.00001) + 0.1
         return action
-
     def max_q_value(self, state):
-        state = torch.tensor([state], dtype=torch.float).to(self.device)
+        state = torch.tensor(state, dtype=torch.float).reshape(1, 4, 11, 11).to(self.device)
         return self.q_net(state).max().item()
 
     def update(self, transition_dict):
@@ -105,7 +109,6 @@ class DQN:
                                    dtype=torch.float).to(self.device)
         dones = torch.tensor(transition_dict['dones'],
                              dtype=torch.float).view(-1, 1).to(self.device)
-
         q_values = self.q_net(states).gather(1, actions)
         if self.dqn_type == 'DoubleDQN':
             max_action = self.q_net(next_states).max(1)[1].view(-1, 1)
@@ -123,7 +126,11 @@ class DQN:
         if self.count % self.target_update == 0:
             self.target_q_net.load_state_dict(self.q_net.state_dict())
         self.count += 1
-
+    def save(self, path):
+        torch.save(self.q_net.state_dict(), path)
+    def load(self, path):
+        self.q_net.load_state_dict(torch.load(path))
+        
 class ReplayBuffer(list):
     def __init__(self, buffer_size):
         super(ReplayBuffer, self).__init__()

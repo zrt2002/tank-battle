@@ -43,6 +43,7 @@ class TankBattle(object):
         self.end_of_game = False
         self.is_debug = debug
         self.frames_count = 0
+        self.enemy_age = 0
         self.total_score = 0
         self.total_score_p1 = 0
         self.total_score_p2 = 0
@@ -208,6 +209,7 @@ class TankBattle(object):
         for _ in range(num_of_enemies):
             x = np.random.randint(1, self.num_of_tiles-1)
             y = np.random.randint(1, int(self.num_of_tiles / 2)-1)
+            self.enemy_age = 0
             enemy = TankSprite(self.tile_size, pos_x=x, pos_y=y,
                                sprite_bg=(self.rc_manager.get_image(ResourceManager.ENEMY_LEFT),
                                           self.rc_manager.get_image(ResourceManager.ENEMY_RIGHT),
@@ -220,32 +222,36 @@ class TankBattle(object):
             self.enemies.add(enemy)
 
             # Increase difficulty
-            if self.total_score > 200:
-                self.enemy_bullet_loading_time = GlobalConstants.ENEMY_LOADING_TIME - 10
-            elif self.total_score > 500:
-                self.enemy_bullet_loading_time = GlobalConstants.ENEMY_LOADING_TIME - 20
-            elif self.total_score > 1000:
-                self.enemy_speed = GlobalConstants.PLAYER_SPEED
-                self.enemy_bullet_loading_time = GlobalConstants.ENEMY_LOADING_TIME - 20
+            # if self.total_score > 200:
+            #     self.enemy_bullet_loading_time = GlobalConstants.ENEMY_LOADING_TIME - 10
+            # elif self.total_score > 500:
+            #     self.enemy_bullet_loading_time = GlobalConstants.ENEMY_LOADING_TIME - 20
+            # elif self.total_score > 1000:
+            #     self.enemy_speed = GlobalConstants.PLAYER_SPEED
+            #     self.enemy_bullet_loading_time = GlobalConstants.ENEMY_LOADING_TIME - 20
 
     def __enemies_update(self):
         if self.frames_count % self.enemy_update_freq == 0:
             for enemy in self.enemies:
-                if random.random() < 0.25:
-                    self.__fire_bullet(enemy, True)
+                # Never fire immediately after respawn (wait 60 frames)
+                if self.enemy_age < 60:
+                    rand_action = np.random.randint(0, self.num_of_actions-1)
                 else:
-                    rand_action = np.random.randint(0, self.num_of_actions)
-                    if rand_action != GlobalConstants.FIRE_ACTION:
-                        if random.random() < 0.5 :
-                            rand_action = enemy.direction
-                        if not enemy.move(rand_action, self.sprites):
-                            rand_action = np.random.randint(0, self.num_of_actions)
-                            if rand_action != GlobalConstants.FIRE_ACTION:
-                                enemy.move(rand_action, self.sprites)
-                            else:
-                                enemy.fire_started_time = self.frames_count
-                    else:
+                    if random.random() < 0.1:
                         self.__fire_bullet(enemy, True)
+                    else:
+                        rand_action = np.random.randint(0, self.num_of_actions)
+                        if rand_action != GlobalConstants.FIRE_ACTION:
+                            if random.random() < 0.5 :
+                                rand_action = enemy.direction
+                            if not enemy.move(rand_action, self.sprites):
+                                rand_action = np.random.randint(0, self.num_of_actions)
+                                if rand_action != GlobalConstants.FIRE_ACTION:
+                                    enemy.move(rand_action, self.sprites)
+                                else:
+                                    enemy.fire_started_time = self.frames_count
+                        else:
+                            self.__fire_bullet(enemy, True)
 
     def __draw_score(self):
         total_score = self.font.render('Score:' + str(self.total_score), False, Utils.get_color(Utils.WHITE))
@@ -590,6 +596,7 @@ class TankBattle(object):
 
     def __calculate_fps(self):
         self.frames_count = self.frames_count + 1
+        self.enemy_age = self.enemy_age + 1
         if self.max_frames > 0:
             if self.frames_count > self.max_frames:
                 self.end_of_game = True
@@ -658,6 +665,7 @@ class TankBattle(object):
     def reset(self):
         self.end_of_game = False
         self.frames_count = 0
+        self.enemy_age = 0
         self.enemy_speed = GlobalConstants.ENEMY_SPEED
         self.enemy_bullet_loading_time = GlobalConstants.ENEMY_LOADING_TIME
         self.started_time = Utils.get_current_time()

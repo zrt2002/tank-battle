@@ -43,11 +43,10 @@ class State:
             self.bullets_enemy.append([self.bullet_x, self.bullet_y, self.bullet_dir])
 
         self.board = self.current_board
-        self.bullets_player = self.bullets_player
-        self.bullets_enemy = self.bullets_enemy
         self.min_norm = min(abs(self.player_x - self.enemy_x), abs(self.player_y - self.enemy_y))
         self.max_norm = max(abs(self.player_x - self.enemy_x), abs(self.player_y - self.enemy_y))
 
+        self.enemy_age = game.enemy_age
         self.aiming = self.is_aiming()
 
     def is_aiming(self):
@@ -62,18 +61,75 @@ class State:
             elif (self.player_x < self.enemy_x) and self.player_dir == GlobalConstants.RIGHT_ACTION:
                 return True
         return False
-    
+
+
 def get_reward(state: State, action, next_state: State, naive_reward, is_terminal):
-    reward = naive_reward
-    if next_state.min_norm < state.min_norm:
-        reward += 0.05
+    reward = naive_reward * 20
+    # reward -= 1.01 ** (state.enemy_age / 1000) / 100
+    # if next_state.min_norm < state.min_norm:
+        # reward += 0.1
     if next_state.max_norm < 2:
-        reward -= 0.03 
+        reward -= 0.1 
     if state.aiming:
-        reward += 1
+        reward += 0.114514223
         if action == GlobalConstants.FIRE_ACTION:
-            reward += 1
+            reward += 5
+    # avoid fatal bullets
+    dangerous_grids = []
+    for bullet in state.bullets_enemy:
+        bullet_x = bullet[0]
+        bullet_y = bullet[1]
+        bullet_dir = bullet[2]
+        if bullet_dir == GlobalConstants.UP_ACTION:
+            dangerous_grids.append([bullet_x, bullet_y - 1])
+            dangerous_grids.append([bullet_x, bullet_y - 2])
+            dangerous_grids.append([bullet_x, bullet_y - 3])
+            dangerous_grids.append([bullet_x, bullet_y - 4])
+        elif bullet_dir == GlobalConstants.DOWN_ACTION:
+            dangerous_grids.append([bullet_x, bullet_y + 1])
+            dangerous_grids.append([bullet_x, bullet_y + 2])
+            dangerous_grids.append([bullet_x, bullet_y + 3])
+            dangerous_grids.append([bullet_x, bullet_y + 4])
+        elif bullet_dir == GlobalConstants.LEFT_ACTION:
+            dangerous_grids.append([bullet_x - 1, bullet_y])
+            dangerous_grids.append([bullet_x - 2, bullet_y])
+            dangerous_grids.append([bullet_x - 3, bullet_y])
+            dangerous_grids.append([bullet_x - 4, bullet_y])
+        elif bullet_dir == GlobalConstants.RIGHT_ACTION:
+            dangerous_grids.append([bullet_x + 1, bullet_y])
+            dangerous_grids.append([bullet_x + 2, bullet_y])
+            dangerous_grids.append([bullet_x + 3, bullet_y])
+            dangerous_grids.append([bullet_x + 4, bullet_y])
+    dangerous_actions = []
+    if [state.player_x, state.player_y - 1] in dangerous_grids:
+        dangerous_actions.append(GlobalConstants.UP_ACTION)
+    if [state.player_x, state.player_y + 1] in dangerous_grids:
+        dangerous_actions.append(GlobalConstants.DOWN_ACTION)
+    if [state.player_x - 1, state.player_y] in dangerous_grids:
+        dangerous_actions.append(GlobalConstants.LEFT_ACTION)
+    if [state.player_x + 1, state.player_y] in dangerous_grids:
+        dangerous_actions.append(GlobalConstants.RIGHT_ACTION)
+    if [state.player_x, state.player_y] in dangerous_grids:
+        dangerous_actions.append(GlobalConstants.FIRE_ACTION)
+    if (dangerous_actions != []) and (action not in dangerous_actions):
+        reward += 10
+
+    # moving into walls
+    if ((state.player_x == 0 and action == GlobalConstants.LEFT_ACTION)
+        or (state.player_x == 10 and action == GlobalConstants.RIGHT_ACTION)
+        or (state.player_y == 0 and action == GlobalConstants.UP_ACTION)
+        or (state.player_y == 10 and action == GlobalConstants.DOWN_ACTION)
+        ):
+        reward -= 2
+    # shooting into walls
+    if ( (state.player_x == 0 and state.player_dir == GlobalConstants.LEFT_ACTION)
+          or (state.player_x == 10 and state.player_dir == GlobalConstants.RIGHT_ACTION)
+          or (state.player_y == 0 and state.player_dir == GlobalConstants.UP_ACTION)
+          or (state.player_y == 10 and state.player_dir == GlobalConstants.DOWN_ACTION)
+          ) and (action == GlobalConstants.FIRE_ACTION):
+        reward -= 2
     if is_terminal:
         reward -= 100
+        print(f"terminal, enemy_age = {state.enemy_age}")
     return reward
     
