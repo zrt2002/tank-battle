@@ -163,10 +163,10 @@ def machine_control(two_players=False,
             train_DQN(agent, game, n_epochs, replay_buffer, minimal_size, batch_size, kill_multiple)
         else:
             evaluate_DQN(agent, game, n_epochs)
-    else:
+    elif train:
         agent = DQN(action_dim, lr, gamma, epsilon,
         target_update, device, 'DoubleDQN')
-
+        train_DQN(agent, game, n_epochs, replay_buffer, minimal_size, batch_size, kill_multiple)
 
     # episodes_list = list(range(len(return_list)))
     # mv_return = rl_utils.moving_average(return_list, 5)
@@ -192,38 +192,39 @@ def human_control(two_players=False):
 
     game.reset()
     scores = []
+    with open('./log.txt', 'w') as f:
+        for step in range(100000):
+            game.render()
 
-    for step in range(100000):
-        game.render()
-
-        terminal = game.is_terminal()
-        if terminal:
-            # print("P1 Score:", game.total_score_p1)
-            # if two_players:
-                # print("P2 Score:", game.total_score_p2)
-            # print("Total Score", game.total_score)
-            # print("Current steps:", step)
-            scores.append(game.total_score)
-            game.reset()
-
+            terminal = game.is_terminal()
+            if terminal:
+                # print("Pdd1 Score:", game.total_score_p1)
+                # if two_players:
+                    # print("P2 Score:", game.total_score_p2)
+                # print("Total Score", game.total_score)
+                # print("Current steps:", step)
+                scores.append(game.total_score)
+                f.write(str(game.total_score) + '\n')
+                game.reset()
+        
     # print(scores)
 
 
 if __name__ == '__main__':
     #argparse
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--train', action='store_true', default=False)
-    parser.add_argument('--monkey', action='store_true', default=False)
-    parser.add_argument('--ckpt', type=str, default=None)
-    parser.add_argument('--kill_multiple', type=int, default=100)
-    args = parser.parse_args()
-    print(args)
-    machine_control(
-        two_players=False,
-        ckpt=args.ckpt,
-        train=args.train,
-        monkey=args.monkey,
-        kill_multiple=args.kill_multiple
-        )
-    # human_control()
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--train', action='store_true', default=False)
+    # parser.add_argument('--monkey', action='store_true', default=False)
+    # parser.add_argument('--ckpt', type=str, default=None)
+    # parser.add_argument('--kill_multiple', type=int, default=100)
+    # args = parser.parse_args()
+    # print(args)
+    # machine_control(
+    #     two_players=False,
+    #     ckpt=args.ckpt,
+    #     train=args.train,
+    #     monkey=args.monkey,
+    #     kill_multiple=args.kill_multiple
+    #     )
+    human_control()
