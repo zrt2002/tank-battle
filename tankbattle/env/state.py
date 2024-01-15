@@ -1,8 +1,10 @@
 import numpy as np
+
 from tankbattle.env.constants import GlobalConstants
 from tankbattle.env.engine import TankBattle
-from tankbattle.env.sprites.tank import TankSprite
 from tankbattle.env.sprites.bullet import BulletSprite
+from tankbattle.env.sprites.tank import TankSprite
+
 
 class State:
     # @staticmethod
@@ -63,15 +65,13 @@ class State:
         return False
 
 
-def get_reward(state: State, action, next_state: State, naive_reward, is_terminal, kill_multiple=100):
-    reward = naive_reward * kill_multiple
-    # reward -= 1.01 ** (state.enemy_age / 1000) / 100
-    # if next_state.min_norm < state.min_norm:
-        # reward += 0.1
+def get_reward(state: State, action, next_state: State, naive_reward, is_terminal):
+    if naive_reward:
+        reward += 100
     if next_state.max_norm < 2:
         reward -= 0.1 
     if state.aiming:
-        reward += 0.114514223
+        reward += 0.1
         if action == GlobalConstants.FIRE_ACTION:
             reward += 5
     # avoid fatal bullets

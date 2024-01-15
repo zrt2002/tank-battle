@@ -1,12 +1,23 @@
 import random
+import time
+now = time.strftime(
+    '%Y-%m-%d-%H-%M-%S', time.localtime(int(round(time.time() * 1000)) / 1000)
+)
+
 import numpy as np
 import torch
 import torch.nn.functional as F
-import matplotlib.pyplot as plt
+
+import time
+
+import torch
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-from torch import nn
+
+from tankbattle.env.engine import TankBattle
 from tankbattle.env.state import State, get_reward
 
+writer = SummaryWriter()
 class Qnet(torch.nn.Module):
     def __init__(self):
         super(Qnet, self).__init__()
@@ -31,52 +42,18 @@ class Qnet(torch.nn.Module):
         x = self.activation(self.linear3(x))
         return self.linear4(x)    
 
-    
-class VAnet(torch.nn.Module):
-    def __init__(self, state_dim, hidden_dim, action_dim):
-        super(VAnet, self).__init__()
-        self.conv1 = torch.nn.Conv2d(4, 8, kernel_size=4, padding=2)
-        self.pooling = torch.nn.AvgPool2d(kernel_size=2, stride=2)
-        self.conv2 = torch.nn.Conv2d(8, 16, kernel_size=3)
-        self.flatten = torch.nn.Flatten()
-        self.linear1 = torch.nn.Linear(64, 48)
-        self.linear2 = torch.nn.Linear(48, 32)
-        self.linear3 = torch.nn.Linear(32, 16)
-        self.linear4 = torch.nn.Linear(16, 5)
-        self.activation = torch.nn.Sigmoid()  # 共享网络部分
-        self.fc_A = torch.nn.Linear(16, 5)
-        self.fc_V = torch.nn.Linear(16, 1)
-
-    def forward(self, x):
-        x = self.activation(self.conv1(x))
-        x = self.pooling(x)
-        x = self.activation(self.conv2(x))
-        x = self.pooling(x)
-        x = self.flatten(x)
-        x = self.activation(self.linear1(x))
-        x = self.activation(self.linear2(x))
-        x = self.activation(self.linear3(x))
-        A = self.fc_A(x)
-        V = self.fc_V(x)
-        Q = V + A - A.mean(1).view(-1, 1)  # Q值由V值和A值计算得到
-        return Q
-
 class DQN:
     def __init__(self,
-                 action_dim,
-                 learning_rate,
-                 gamma,
-                 epsilon,
-                 target_update,
-                 device,
-                 dqn_type='VanillaDQN'):
+                 action_dim = 5,
+                 learning_rate = 1e-2,
+                 gamma = 0.98,
+                 epsilon = 0.1,
+                 target_update = 50,
+                 device = torch.device('cpu'),
+                 dqn_type='DoubleDQN'):
         self.action_dim = action_dim
-        if dqn_type == 'DuelingDQN':  # Dueling DQN采取不一样的网络框架
-            self.q_net = VAnet().to(device)
-            self.target_q_net = VAnet().to(device)
-        else:
-            self.q_net = Qnet().to(device)
-            self.target_q_net = Qnet().to(device)
+        self.q_net = Qnet().to(device)
+        self.target_q_net = Qnet().to(device)
         self.optimizer = torch.optim.Adam(self.q_net.parameters(),
                                           lr=learning_rate)
         self.gamma = gamma
@@ -149,3 +126,54 @@ class ReplayBuffer(list):
         next_states = [sample[3] for sample in batch]
         is_terminals = [sample[4] for sample in batch]
         return states, actions, rewards, next_states, is_terminals
+def train_DQN(
+    agent: DQN,
+    game: TankBattle,
+    n_epochs,
+    replay_buffer: ReplayBuffer,
+    minimal_size,
+    batch_size,
+    kill_multiple,
+):
+    max_q_value_list = []
+    max_q_value = 0
+    for epoch in tqdm(range(n_epochs)):
+        epoch_return = 0
+        epoch_true_score = 0
+        state = State(game)
+        is_terminal = False
+        while not is_terminal:
+            action = agent.take_action(state.board)
+            max_q_value = (
+                agent.max_q_value(state.board) * 0.005 + max_q_value * 0.995
+            )
+            max_q_value_list.append(max_q_value)
+            naive_reward = game.step(action)[0]
+            next_state = State(game)
+            is_terminal = game.is_terminal()
+            reward = get_reward(
+                state, action, next_state, naive_reward, is_terminal, kill_multiple
+            )
+            replay_buffer.add(
+                state.board, action, reward, next_state.board, is_terminal
+            )
+            state = next_state
+            epoch_return += reward
+            epoch_true_score += naive_reward
+            if replay_buffer.size() > minimal_size:
+                b_s, b_a, b_r, b_ns, b_d = replay_buffer.sample(batch_size)
+                transition_dict = {
+                    'states': b_s,
+                    'actions': b_a,
+                    'next_states': b_ns,
+                    'rewards': b_r,
+                    'dones': b_d,
+                }
+                agent.update(transition_dict)
+            writer.add_scalar('max_q_value', max_q_value, epoch)
+        game.reset()
+        writer.add_scalar('epoch_return', epoch_return, epoch)
+        writer.add_scalar('epoch_true_score', epoch_true_score, epoch)
+        writer.add_scalar('epsilon', agent.epsilon, epoch)
+        if epoch % 20 == 0:
+            agent.save(f'ckpts/{now}/model_{epoch}.pth')

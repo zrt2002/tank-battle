@@ -1,20 +1,21 @@
-import pygame
-import os
-import numpy as np
-import sys
-import random
-
-
 import collections as cl
-from tankbattle.env.utils import Utils
+import os
+import random
+import sys
+
+import numpy as np
+import pygame
+
 from tankbattle.env.constants import GlobalConstants
-from tankbattle.env.sprites.tank import TankSprite
-from tankbattle.env.sprites.base import BaseSprite
-from tankbattle.env.sprites.wall import WallSprite
-from tankbattle.env.sprites.explosion import ExplosionSprite
-from tankbattle.env.sprites.bullet import BulletSprite
 from tankbattle.env.manager import ResourceManager
 from tankbattle.env.maps import StageMap
+from tankbattle.env.sprites.base import BaseSprite
+from tankbattle.env.sprites.bullet import BulletSprite
+from tankbattle.env.sprites.explosion import ExplosionSprite
+from tankbattle.env.sprites.tank import TankSprite
+from tankbattle.env.sprites.wall import WallSprite
+from tankbattle.env.utils import Utils
+
 
 class TankBattle(object):
 

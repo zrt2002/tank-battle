@@ -1,6 +1,6 @@
-from tankbattle.env.sprites.wall import WallSprite
 from tankbattle.env.constants import GlobalConstants
 from tankbattle.env.manager import ResourceManager
+from tankbattle.env.sprites.wall import WallSprite
 
 
 class StageMap(object):

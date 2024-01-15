@@ -1,9 +1,7 @@
 import time
-import numpy as np
-# import cv2
 
 
-class Utils():
+class Utils:
     WHITE = 0
     BLACK = 1
     GRAY = 2

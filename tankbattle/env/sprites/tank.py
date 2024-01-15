@@ -1,5 +1,6 @@
-import pygame
 import numpy as np
+import pygame
+
 from tankbattle.env.constants import GlobalConstants
 
 
@@ -27,7 +28,7 @@ class TankSprite(pygame.sprite.Sprite):
         self.is_terminate = False
 
         if not is_enemy:
-            self.direction = GlobalConstants.UP_ACTION
+            self.direction = GlobalConstants.LEFT_ACTION
 
     def update(self):
         self.image = self.sprite_bg[self.direction]
